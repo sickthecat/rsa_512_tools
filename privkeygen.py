@@ -1,13 +1,47 @@
-# replace the e,n,p and q with your values
-from Crypto.PublicKey import RSA
+#!/usr/bin/python3
 
-e = 1907290511 # Public exponent
-n = 47920119882797691403867828907812835242537937211691598265276234581717759022354092672020913058871800837812257555049677986843264738086789698357187654765011557607523642737649131358678316709032130210630398345964391818115279541200643138602750428775730016055683171556019918945139397013540371933000718268316057619 # Modulus (p * q)
-p = 1855378671 # Prime 1
-q = 2585108117 # Prime 2
+# The following code was written by Wulf on #crypto (Libera)
+#Modified by _SiCk @ afflicted.sh to drop the key into a .pem formatted file.
 
-d = pow(e, -1, (p-1) * (q-1)) # Private exponent
+from math import gcd
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric.rsa import (
+    RSAPublicNumbers,
+    RSAPrivateNumbers,
+    rsa_crt_iqmp,
+    rsa_crt_dmp1,
+    rsa_crt_dmq1,
+)
+from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
 
-key = RSA.construct((n, e, d, p, q)) # Reconstruct the key
-private_key = key.export_key() # Get the private key in PEM format
-print(private_key.decode()) # Print the private key
+def gcdext(a, b):
+    x0, x1, y0, y1 = 1, 0, 0, 1
+    while b:
+        q, a, b = a // b, b, a % b
+        x0, x1 = x1, x0 - q * x1
+        y0, y1 = y1, y0 - q * y1
+    return a, x0, y0
+
+def invert(a, n):
+    g, x, __ = gcdext(a, n)
+    if g != 1:
+        raise ValueError("Arguments are not coprime")
+    return x % n
+
+e = 65537
+# order doesn't matter:
+p = 115733919514273107123584393261050157838699796410090632060096329519444848416597
+q = 114538955737678332043511344817720090710169002820676417254048008431901325656187
+
+n = p * q
+pub_num = RSAPublicNumbers(e, n)
+d = invert(e, (p - 1) * (q - 1))
+iq = rsa_crt_iqmp(p, q)
+dp = rsa_crt_dmp1(d, p)
+dq = rsa_crt_dmq1(d, q)
+prv_num = RSAPrivateNumbers(p, q, d, dp, dq, iq, pub_num)
+prv = prv_num.private_key(default_backend())  # skip arg in recent versions
+
+# Save the private key to a .pem file
+with open("private_key.pem", "wb") as key_file:
+    key_file.write(prv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
