@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # The following code was written by Wulf on #crypto (Libera)
-#Modified by _SiCk @ afflicted.sh to drop the key into a .pem formatted file.
+# Modified by _SiCk @ afflicted.sh to drop the key into a .pem formatted file.
 
 from math import gcd
 from cryptography.hazmat.backends import default_backend
